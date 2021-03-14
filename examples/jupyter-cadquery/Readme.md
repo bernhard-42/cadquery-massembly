@@ -1,0 +1,1 @@
+See [jupyter-cadaquery assembly examples](https://github.com/bernhard-42/jupyter-cadquery/tree/master/examples/assemblies)
