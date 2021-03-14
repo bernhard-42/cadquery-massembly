@@ -33,7 +33,24 @@ CadQuery provides an solver based assemblies.
     )
     ```
 
-Full code see [2-hexapod.py](./examples/cq-editor/2-hexapod.py)
+    Full code see [2-hexapod.py](./examples/cq-editor/2-hexapod.py)
+
+### Mate visualisation
+
+- Visualize mates in CQ-Editor (Note: `show_mates` needs `show_object`as parameter and `length`determines the size of the visualised mate)
+
+    ```python
+    from cadquery_massembly.cq_editor import show_mates
+    
+    show_object(hexapod, name="hexapod")
+    show_mates(hexapod, show_object, length=5)
+    ```
+
+- Visualize mates in Jupyter CadQuery
+
+    ```python
+    show(hexapod, render_mates=True)
+    ```
 
 ### Final assembly
 
@@ -58,12 +75,19 @@ Full code see [2-hexapod.py](./examples/cq-editor/2-hexapod.py)
         
         #   ...
 
-        show_object(hexapod)
+        show_object(hexapod, name="hexapod")
     ```
 
-Full code see [2-hexapod.py](./examples/cq-editor/2-hexapod.py)
+    Full code see [2-hexapod.py](./examples/cq-editor/2-hexapod.py)
 
-### Visualisation
+## Installation
+
+```shell
+pip install git+https://github.com/bernhard-42/cadquery-massembly
+```
+
+
+## Visualisation
 
 ### CQ-Editor
 
