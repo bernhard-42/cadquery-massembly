@@ -2,7 +2,7 @@
 
 ## Intro
 
-CadQuery provides an solver based assemblies.
+CadQuery provides numerical solver based assemblies.
 
 `MAssembly` is derived from `cadquery.Assembly`, however, allows to define mates which will be used to manually assemble the objects.
 
