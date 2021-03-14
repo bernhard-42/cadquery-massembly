@@ -4,7 +4,7 @@
 
 CadQuery provides an solver based assemblies.
 
-`MAssembly` is derive from `cadquery.Assembly`, however, allows to define mates which will be used to manually assemble the objects.
+`MAssembly` is derived from `cadquery.Assembly`, however, allows to define mates which will be used to manually assemble the objects.
 
 ### Mate definitions
 
