@@ -1,0 +1,8 @@
+{
+    "python.formatting.provider": "black",
+    "python.formatting.blackArgs": [
+        "--line-length",
+        "119"
+    ],
+    "python.pythonPath": "/opt/anaconda/envs/jc22/bin/python"
+}

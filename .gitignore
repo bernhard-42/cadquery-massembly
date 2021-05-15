@@ -1,1 +1,4 @@
 vslot-2020_1.dxf
+dist/
+cadquery_massembly.egg-info/
+build
