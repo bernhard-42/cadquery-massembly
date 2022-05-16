@@ -70,6 +70,11 @@ class Mate:
 
         self.y_dir = self.z_dir.cross(self.x_dir)
 
+    def copy(self):
+        mate = Mate(Vector(self.origin), Vector(self.x_dir), Vector(self.z_dir))
+        mate.y_dir = Vector(self.y_dir)  # be sure to copy y_dir
+        return mate
+
     @property
     def loc(self):
         return Location(Plane(self.origin, self.x_dir, self.z_dir))
