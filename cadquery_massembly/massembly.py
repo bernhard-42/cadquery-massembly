@@ -42,6 +42,16 @@ class MAssembly(Assembly):
     def __repr__(self):
         return f"MAssembly('{self.name}', objects: {len(self.objects)}, children: {len(self.children)})"
 
+    @classmethod
+    def from_assembly(cls, assembly):
+        def _from_assembly(assembly):
+            massembly = cls(obj=assembly.obj, name=assembly.name, color=assembly.color, loc=assembly.loc)
+            for child in assembly.children:
+                massembly.add(_from_assembly(child))
+            return massembly
+
+        return _from_assembly(assembly)
+
     def dump(self):
         def fqpath(assy):
             result = assy.name
