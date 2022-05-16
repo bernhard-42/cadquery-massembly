@@ -1,4 +1,16 @@
-vslot-2020_1.dxf
 dist/
 cadquery_massembly.egg-info/
 build
+*/__pycache__
+*.egg-info/
+.ipynb_checkpoints/
+dist/
+build/
+*.py[cod]
+node_modules/
+.mypy_cache
+scratch
+vslot-2020_1.dxf
+
+# OS X
+.DS_Store
