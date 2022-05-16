@@ -11,7 +11,7 @@ def relocate(assy):
     def _relocate(assy, origins):
         origin_mate = origins.get(assy.name)
         if origin_mate is not None:
-            assy.obj = Workplane(assy.obj.val().moved(origin_mate.loc.inverse))
+            assy.obj = None if assy.obj is None else Workplane(assy.obj.val().moved(origin_mate.loc.inverse))
             assy.loc = Location()
         for c in assy.children:
             _relocate(c, origins)
