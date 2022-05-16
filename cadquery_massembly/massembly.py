@@ -47,14 +47,15 @@ class MAssembly(Assembly):
             result = assy.name
             p = assy.parent
             while p:
-                result = f"{p.name}>{result}"
+                result = f"{p.name}/{result}"
                 p = p.parent
             return result
 
         def to_string(assy, matelist, ind="") -> str:
             fq = fqpath(assy)
-            result = f"{ind}MAssembly(name: '{assy.name}', 'fq: '{fq}', obj_hash: {assy.obj.__hash__()})\n"
-            result += f"{ind}    mates: {matelist[fq]}\n"
+            result = f"\n{ind}MAssembly(name: '{assy.name}', 'fq: '{fq}', loc: {assy.loc} obj_hash: {assy.obj.__hash__()})\n"
+            for name in matelist.get(fq, []):
+                result += f"{ind}  - {name:20s}: mate={self.mates[name].mate} origin={self.mates[name].origin}\n"
             for c in assy.children:
                 result += to_string(c, matelist, ind + "    ")
             return result
