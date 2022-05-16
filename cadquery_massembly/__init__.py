@@ -1,5 +1,5 @@
 from .mate import Mate
-from .massembly import MAssembly
+from .massembly import MAssembly, DOF
 from ._version import __version_info__, __version__
 
 

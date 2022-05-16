@@ -2,9 +2,9 @@ from collections import OrderedDict
 from dataclasses import dataclass
 from typing import Optional, Union, Tuple, Dict, List, overload
 
-from cadquery import Workplane, Location, Assembly, Shape
-from cadquery.assembly import _grammar
+from cadquery import Location, Assembly
 from .mate import Mate
+from .geom import Circle
 
 Selector = Tuple[str, Union[str, Tuple[float, float]]]
 
@@ -14,6 +14,24 @@ class MateDef:
     mate: Mate
     assembly: "MAssembly"
     origin: bool
+
+    @property
+    def world_mate(self):
+        mate = self.mate
+        assembly = self.assembly
+
+        while assembly is not None:
+            mate = mate.moved(assembly.loc)
+            assembly = assembly.parent
+
+        return mate
+
+
+@dataclass
+class DOF:
+    mate_name: str
+    target_mate_name: str
+    dof: str
 
 
 class MAssembly(Assembly):
@@ -97,21 +115,128 @@ class MAssembly(Assembly):
 
         return self
 
-    def assemble(self, object_name: str, target: Union[str, Location]) -> Optional["MAssembly"]:
+    def assemble(
+        self,
+        object_name: str,
+        target: Union[str, Location],
+        joint1: DOF = None,
+        joint2: DOF = None,
+        solution: int = 0,
+    ) -> Optional["MAssembly"]:
         """
         Translate and rotate a mate onto a target mate
         :param mate: name of the mate to be assembled
         :param target: name of the target mate or a Location object to assemble the mate to
         :return: self
         """
-        o_mate, o_assy = self.mates[object_name].mate, self.mates[object_name].assembly
-        if isinstance(target, str):
-            t_mate, t_assy = self.mates[target].mate, self.mates[target].assembly
-            if o_assy.parent == t_assy.parent or o_assy.parent is None:
-                o_assy.loc = t_assy.loc
+        if joint1 is None or joint2 is None:
+
+            o_mate, o_assy = self.mates[object_name].mate, self.mates[object_name].assembly
+            if isinstance(target, str):
+                t_mate, t_assy = self.mates[target].mate, self.mates[target].assembly
+                if o_assy.parent == t_assy.parent or o_assy.parent is None:
+                    o_assy.loc = t_assy.loc
+                else:
+                    o_assy.loc = t_assy.loc * o_assy.parent.loc.inverse
+                o_assy.loc = o_assy.loc * t_mate.loc * o_mate.loc.inverse
             else:
-                o_assy.loc = t_assy.loc * o_assy.parent.loc.inverse
-            o_assy.loc = o_assy.loc * t_mate.loc * o_mate.loc.inverse
+                o_assy.loc = target
+            return self
+
+        elif isinstance(target, str):
+
+            mate_name1 = object_name
+            mate_name2 = target
+
+            self.assemble(joint1.mate_name, joint1.target_mate_name)
+            self.assemble(joint2.mate_name, joint2.target_mate_name)
+
+            w_mate1 = self.mates[mate_name1].world_mate
+            joint_mate1 = self.mates[joint1.mate_name].mate
+            w_joint_mate1 = self.mates[joint1.mate_name].world_mate
+
+            w_mate2 = self.mates[mate_name2].world_mate
+            joint_mate2 = self.mates[joint2.mate_name].mate
+            w_joint_mate2 = self.mates[joint2.mate_name].world_mate
+
+            # project the mate origin to the rotation axis z_dir
+            if joint1.dof == "rz":
+                center1 = (w_mate1.origin - w_joint_mate1.origin).projectToLine(
+                    w_joint_mate1.z_dir
+                ) + w_joint_mate1.origin
+                radius1 = (center1 - w_mate1.origin).Length
+                circle1 = Circle(radius1, center1, x_dir=w_joint_mate1.x_dir, normal=w_joint_mate1.z_dir)
+            else:
+                raise ValueError(f"DOF {joint1.dof} not supported")
+
+            if joint2.dof == "rz":
+                center2 = (w_mate2.origin - w_joint_mate2.origin).projectToLine(
+                    w_joint_mate2.z_dir
+                ) + w_joint_mate2.origin
+                radius2 = (center2 - w_mate2.origin).Length
+                circle2 = Circle(radius2, center2, x_dir=w_joint_mate2.x_dir, normal=w_joint_mate2.z_dir)
+            else:
+                raise ValueError(f"DOF {joint2.dof} not supported")
+
+            if joint1.dof == "rz" and joint2.dof == "rz":
+                points = circle1.intersect(circle2)
+
+                if len(points) > solution:
+                    point = points[solution]
+
+                    angle1 = circle1.local_angle(point, w_mate1.origin)
+                    angle2 = circle2.local_angle(point, w_mate2.origin)
+                    joint_mate1.rz(angle1)
+                    joint_mate2.rz(angle2)
+                else:
+                    raise RuntimeError("Cannot assemble parts")
+
+            self.assemble(joint1.mate_name, joint1.target_mate_name)
+            self.assemble(joint2.mate_name, joint2.target_mate_name)
+
+            return angle1, angle2
+
         else:
-            o_assy.loc = target
+            raise ValueError("Wrong parameters")
+
+    def export_mates(self, mate_names):
+        """
+        Take an existing mates and export them to the top level
+        All intermediate locations will be applied
+        All non exported mates will be deleted
+        :param mate_names: list names of mates to be exported
+        :return: self
+        """
+        new_mates = []
+        for name, mate_def in self.mates.items():
+            if mate_names.get(name) is not None:
+                new_mates.append((self.name, mate_def.world_mate, mate_names.get(name)))
+
+        self.mates = {}
+        for mate_def in new_mates:
+            self.mate(mate_def[0], mate_def[1], name=mate_def[2])
+
         return self
+
+    def import_mate(self, assembly, mate_name, target_assembly_name, target_mate_name, transforms=None, origin=False):
+        """
+        Import mates from an import Massembly
+        :param assembly: the imported assembly
+        :param mate_name: name of the mate to be imported
+        :param target_assembly_name: name of the target assembly to attach the imported mate
+        :param target_mate_name: unique name of the target mate
+        :param transforms: an ordered dict of rx, ry, rz, tx, ty, tz transformations
+        :param origin Whether this mate is the origin of the assembly
+        :return: self
+        """
+        if target_mate_name in list(self.mates):
+            raise ValueError("Mate name already exists")
+
+        mate_def = assembly.mates[mate_name]
+        self.mate(
+            target_assembly_name,
+            mate_def.mate.copy(),
+            name=target_mate_name,
+            origin=origin,
+            transforms=transforms,
+        )
