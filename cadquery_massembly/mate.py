@@ -75,7 +75,7 @@ class Mate:
         return Location(Plane(self.origin, self.x_dir, self.z_dir))
 
     def __repr__(self) -> str:
-        c = lambda v: f"({v.x:.4f}, {v.y:.4f}, {v.z:.4f})"
+        c = lambda v: f"({v.x:8.3f}, {v.y:8.3f}, {v.z:8.3f})"
         return f"Mate(origin={c(self.origin)}, x_dir={c(self.x_dir)}, z_dir={c(self.z_dir)})"
 
     @staticmethod
