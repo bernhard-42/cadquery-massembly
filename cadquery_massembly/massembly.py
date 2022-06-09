@@ -2,7 +2,7 @@ from collections import OrderedDict
 from dataclasses import dataclass
 from typing import Optional, Union, Tuple, Dict, List, overload
 
-from cadquery import Location, Assembly
+from cadquery import Workplane, Location, Assembly
 from .mate import Mate
 from .geom import Circle
 
@@ -214,6 +214,28 @@ class MAssembly(Assembly):
 
         else:
             raise ValueError("Wrong parameters")
+
+    def relocate(self):
+        """Relocate the assembly so that all its shapes have their origin at the assembly origin"""
+
+        def _relocate(self, origins):
+            origin_mate = origins.get(self.name)
+            if origin_mate is not None:
+                self.obj = None if self.obj is None else Workplane(self.obj.val().moved(origin_mate.loc.inverse))
+                self.loc = Location()
+            for c in self.children:
+                _relocate(c, origins)
+
+        origins = {mate_def.assembly.name: mate_def.mate for mate_def in self.mates.values() if mate_def.origin}
+
+        # relocate all CadQuery objects
+        _relocate(self, origins)
+
+        # relocate all mates
+        for mate_def in self.mates.values():
+            origin_mate = origins.get(mate_def.assembly.name)
+            if origin_mate is not None:
+                mate_def.mate = mate_def.mate.moved(origin_mate.loc.inverse)
 
     def export_mates(self, mate_names):
         """
