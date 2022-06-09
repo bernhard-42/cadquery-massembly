@@ -141,7 +141,16 @@ class MAssembly(Assembly):
         :param target: name of the target mate or a Location object to assemble the mate to
         :return: self
         """
-        if joint1 is None or joint2 is None:
+
+        def align_mates():
+            v1 = self.mates[object_name].world_mate.x_dir
+            v2 = self.mates[target].world_mate.x_dir
+            z = self.mates[target].world_mate.z_dir
+
+            angle = v1.wrapped.AngleWithRef(v2.wrapped, z.wrapped) / pi * 180
+            self.mates[object_name].mate.rz(angle)
+
+        if joint1 is None and joint2 is None:
 
             o_mate, o_assy = self.mates[object_name].mate, self.mates[object_name].assembly
             if isinstance(target, str):
@@ -153,7 +162,30 @@ class MAssembly(Assembly):
                 o_assy.loc = o_assy.loc * t_mate.loc * o_mate.loc.inverse
             else:
                 o_assy.loc = target
-            return self
+
+        elif joint2 is None:
+            self.assemble(joint1.mate_name, joint1.target_mate_name)
+
+            w_mate1 = self.mates[object_name].world_mate
+            joint_mate = self.mates[joint1.mate_name].mate
+            w_joint_mate = self.mates[joint1.mate_name].world_mate
+
+            w_mate2 = self.mates[target].world_mate
+
+            if joint1.dof == "rz":
+                v1 = w_joint_mate.origin - w_mate1.origin
+                v2 = w_joint_mate.origin - w_mate2.origin
+                z = w_joint_mate.z_dir
+
+                angle = v2.wrapped.AngleWithRef(v1.wrapped, z.wrapped) / pi * 180
+                joint_mate.rz(angle)
+                self.assemble(joint1.mate_name, joint1.target_mate_name)
+
+                # Finally alignm mates of object and target
+                align_mates()
+
+            else:
+                raise ValueError(f"DOF {joint1.dof} not supported")
 
         elif isinstance(target, str):
 
@@ -204,17 +236,12 @@ class MAssembly(Assembly):
             self.assemble(joint2.mate_name, joint2.target_mate_name)
 
             # Finally alignm mates of object and target
-            v1 = self.mates[object_name].world_mate.x_dir
-            v2 = self.mates[target].world_mate.x_dir
-            z = self.mates[target].world_mate.z_dir
-
-            angle = v2.wrapped.AngleWithRef(v1.wrapped, z.wrapped) / pi * 180
-            self.mates[object_name].mate.rz(-angle)
-
-            return angle1, angle2
+            align_mates()
 
         else:
             raise ValueError("Wrong parameters")
+
+        return self
 
     def relocate(self):
         """Relocate the assembly so that all its shapes have their origin at the assembly origin"""
