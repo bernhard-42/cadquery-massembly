@@ -156,17 +156,14 @@ class MAssembly(Assembly):
 
         elif isinstance(target, str):
 
-            mate_name1 = object_name
-            mate_name2 = target
-
             self.assemble(joint1.mate_name, joint1.target_mate_name)
             self.assemble(joint2.mate_name, joint2.target_mate_name)
 
-            w_mate1 = self.mates[mate_name1].world_mate
+            w_mate1 = self.mates[object_name].world_mate
             joint_mate1 = self.mates[joint1.mate_name].mate
             w_joint_mate1 = self.mates[joint1.mate_name].world_mate
 
-            w_mate2 = self.mates[mate_name2].world_mate
+            w_mate2 = self.mates[target].world_mate
             joint_mate2 = self.mates[joint2.mate_name].mate
             w_joint_mate2 = self.mates[joint2.mate_name].world_mate
 
@@ -204,6 +201,14 @@ class MAssembly(Assembly):
 
             self.assemble(joint1.mate_name, joint1.target_mate_name)
             self.assemble(joint2.mate_name, joint2.target_mate_name)
+
+            # Finally alignm mates of object and target
+            v1 = self.mates[object_name].world_mate.x_dir
+            v2 = self.mates[target].world_mate.x_dir
+            z = self.mates[target].world_mate.z_dir
+
+            angle = v2.wrapped.AngleWithRef(v1.wrapped, z.wrapped) / pi * 180
+            self.mates[object_name].mate.rz(-angle)
 
             return angle1, angle2
 
