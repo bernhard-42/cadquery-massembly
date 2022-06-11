@@ -167,23 +167,35 @@ class MAssembly(Assembly):
             self.assemble(joint1.mate_name, joint1.target_mate_name)
 
             w_mate1 = self.mates[object_name].world_mate
+            w_mate2 = self.mates[target].world_mate
+
             joint_mate = self.mates[joint1.mate_name].mate
             w_joint_mate = self.mates[joint1.mate_name].world_mate
 
-            w_mate2 = self.mates[target].world_mate
-
             if joint1.dof == "rz":
-                v1 = w_joint_mate.origin - w_mate1.origin
-                v2 = w_joint_mate.origin - w_mate2.origin
-                z = w_joint_mate.z_dir
+                proj_mate1 = (w_mate1.origin - w_joint_mate.origin).projectToLine(
+                    w_joint_mate.z_dir
+                ) + w_joint_mate.origin
 
+                proj_mate2 = (w_mate2.origin - w_joint_mate.origin).projectToLine(
+                    w_joint_mate.z_dir
+                ) + w_joint_mate.origin
+
+                v1 = proj_mate1 - w_mate1.origin
+                v2 = proj_mate2 - w_mate2.origin
+                z = w_joint_mate.z_dir
                 angle = v2.wrapped.AngleWithRef(v1.wrapped, z.wrapped) / pi * 180
                 joint_mate.rz(angle)
+
                 self.assemble(joint1.mate_name, joint1.target_mate_name)
 
-                # Finally alignm mates of object and target
+                # Finally align mates of object and target
                 align_mates()
 
+                if (self.mates[object_name].world_mate.origin - self.mates[target].world_mate.origin).Length > 1e-6:
+                    print("Warning: Mates for target and object don't coincide")
+                    print(self.mates[object_name].world_mate.origin)
+                    print(self.mates[target].world_mate.origin)
             else:
                 raise ValueError(f"DOF {joint1.dof} not supported")
 
