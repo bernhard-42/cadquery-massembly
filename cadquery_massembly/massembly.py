@@ -46,9 +46,9 @@ class MAssembly(Assembly):
     @classmethod
     def from_assembly(cls, assembly):
         def _from_assembly(assembly):
-            massembly = cls(obj=assembly.obj, name=assembly.name, color=assembly.color, loc=assembly.loc)
+            massembly = cls(obj=assembly.obj, name=assembly.name, loc=assembly.loc, color=assembly.color)
             for child in assembly.children:
-                massembly.add(_from_assembly(child))
+                massembly.add(_from_assembly(child), name=f"{child.name}")
             return massembly
 
         return _from_assembly(assembly)
