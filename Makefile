@@ -41,6 +41,8 @@ release:
 	git tag -a v$(CURRENT_VERSION) -m "Latest release: $(CURRENT_VERSION)"
 
 create-release:
+	@git push
+	@git push --tags
 	@github-release release -u bernhard-42 -r cadquery-massembly -t v$(CURRENT_VERSION) -n cadquery-massembly-$(CURRENT_VERSION)
 	@sleep 2
 	@github-release upload  -u bernhard-42 -r cadquery-massembly -t v$(CURRENT_VERSION) -n cadquery_massembly-$(CURRENT_VERSION).tar.gz -f dist/cadquery_massembly-$(CURRENT_VERSION).tar.gz
