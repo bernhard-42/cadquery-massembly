@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup_args = {
     "name": "cadquery_massembly",
-    "version": "1.0.0rc1",
+    "version": "1.0.0",
     "description": "A manual assembly system for cadquery based on mates",
     "include_package_data": True,
     "install_requires": [],

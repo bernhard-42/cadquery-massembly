@@ -10,5 +10,5 @@ def get_version(version):
     return VersionInfo(major, minor, patch, release, build)
 
 
-__version__ = "1.0.0rc1"
+__version__ = "1.0.0"
 __version_info__ = get_version(__version__)
