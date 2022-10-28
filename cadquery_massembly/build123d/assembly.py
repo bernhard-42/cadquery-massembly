@@ -40,7 +40,7 @@ class MAssembly:
         def to_string(assy, matelist, ind="") -> str:
             result = f"\n{ind}{assy}\n"
             for name in matelist.get(assy.fq_name, []):
-                result += f"{ind}  - {name:15s}: mate={self.mates[name].mate} origin={self.mates[name].origin}\n"
+                result += f"{ind}  - {name:15s}: mate={self.mates[name].mate} origin={self.mates[name].mate.is_origin}\n"
             for c in assy.children:
                 result += to_string(c, matelist, ind + "    ")
             return result
@@ -89,7 +89,11 @@ class MAssembly:
     # proper key path across the assembly
     @property
     def fq_name(self):
-        return f"/{self.name}" if self.parent is None else f"{self.parent.fq_name}/{self.name}"
+        return (
+            f"/{self.name}"
+            if self.parent is None
+            else f"{self.parent.fq_name}/{self.name}"
+        )
 
     @property
     def objs(self):
@@ -102,7 +106,7 @@ class MAssembly:
     def __repr__(self):
         hash = None if self.obj is None else self.obj.hash_code()
         parent = None if self.parent is None else self.parent.name
-        object = None if self.obj is None else f"{self.obj.__class__.__name__}(hash:{hash})"
-        return (
-            f"MAssembly(name={self.name}, parent={parent}, color={self.color}, loc={self.loc.__repr__()}, obj={object}"
+        object = (
+            None if self.obj is None else f"{self.obj.__class__.__name__}(hash:{hash})"
         )
+        return f"MAssembly(name={self.name}, parent={parent}, color={self.color}, loc={self.loc.__repr__()}, obj={object}"
