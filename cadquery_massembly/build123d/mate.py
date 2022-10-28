@@ -66,36 +66,35 @@ class Mate:
             self.x_dir = Vector(val.x_dir.to_tuple())
             self.z_dir = Vector(val.z_dir.to_tuple())
 
-        elif len(args) == 1 and isinstance(args[0], Shape):
+        elif len(args) == 1 and isinstance(args[0], (Edge, Wire)):
             val = args[0]
 
-            if isinstance(val, (Edge, Wire)):
-                self.z_dir = val.normal()
+            self.z_dir = val.normal()
 
-                vertices = val.vertices()
-                if len(vertices) == 1:  # e.g. a single closed spline
-                    self.origin = val.center(center_of)
-                    # Use the vector defined by the vertex and the origin as x direction
-                    self.x_dir = Vector((vertices[0] - self.origin).to_tuple()).normalized()
-                else:
-                    self.origin = Vector(vertices[0].to_tuple())
-                    # Use the vector defined by the first two vertices as x direction
-                    self.x_dir = Vector((vertices[0] - vertices[1]).to_tuple()).normalized()
-
-                self.y_dir = self.z_dir.cross(self.x_dir)
-
-            elif isinstance(val, Face):
+            vertices = val.vertices()
+            if len(vertices) == 1:  # e.g. a single closed spline
                 self.origin = val.center(center_of)
-
-                # x_dir, y_dir will be derived from the local coord system of the underlying plane
-                p = val._geom_adaptor().Position()
-                xd = p.Ax2().XDirection()
-                yd = p.Ax2().YDirection()
-                self.x_dir = Vector(xd.X(), xd.Y(), xd.Z())
-                self.y_dir = Vector(yd.X(), yd.Y(), yd.Z())
-                self.z_dir = self.x_dir.cross(self.y_dir)
+                # Use the vector defined by the vertex and the origin as x direction
+                self.x_dir = Vector((vertices[0] - self.origin).to_tuple()).normalized()
             else:
-                raise ValueError("Needs a Face, Wire, or an Edge")
+                self.origin = Vector(vertices[0].to_tuple())
+                # Use the vector defined by the first two vertices as x direction
+                self.x_dir = Vector((vertices[0] - vertices[1]).to_tuple()).normalized()
+
+            self.y_dir = self.z_dir.cross(self.x_dir)
+
+        elif len(args) == 1 and isinstance(args[0], Face):
+            val = args[0]
+
+            self.origin = val.center(center_of)
+
+            # x_dir, y_dir will be derived from the local coord system of the underlying plane
+            p = val._geom_adaptor().Position()
+            xd = p.Ax2().XDirection()
+            yd = p.Ax2().YDirection()
+            self.x_dir = Vector(xd.X(), xd.Y(), xd.Z())
+            self.y_dir = Vector(yd.X(), yd.Y(), yd.Z())
+            self.z_dir = self.x_dir.cross(self.y_dir)
 
         elif len(args) <= 3 and all([isinstance(a, (Vector, tuple)) for a in args]):
             self.origin = Vector(args[0])
@@ -104,7 +103,7 @@ class Mate:
             self.y_dir = self.z_dir.cross(self.x_dir)
 
         else:
-            raise ValueError(f"Needs a Mate, Plane, Face, Wire, or an Edge, not {args}")
+            raise ValueError(f"Needs a 1-3 Vectors or a single Mate, Plane, Face, Edge or Wire, not {args}")
 
         if self.name == "":
             raise ValueError("name cannot be empty")
