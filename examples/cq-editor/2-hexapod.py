@@ -86,11 +86,7 @@ def create_stand():
         stand.union(inset.translate(((height + thickness) / 2, 0, 0)))
         .union(inset.translate((-(height + thickness) / 2, 0, 0)))
         .union(backing.translate((-height / 2, -thickness / 2, thickness / 2)))
-        .union(
-            backing.rotate((0, 0, 0), (0, 1, 0), -90).translate(
-                (height / 2, -thickness / 2, thickness / 2)
-            )
-        )
+        .union(backing.rotate((0, 0, 0), (0, 1, 0), -90).translate((height / 2, -thickness / 2, thickness / 2)))
     )
     return stand
 
@@ -202,14 +198,10 @@ from collections import OrderedDict as odict
 hexapod = create_hexapod()
 
 hexapod.mate("bottom?top", name="bottom", origin=True)
-hexapod.mate(
-    "top?bottom", name="top", origin=True, transforms=odict(rx=180, tz=-(height + 2 * tol))
-)
+hexapod.mate("top?bottom", name="top", origin=True, transforms=odict(rx=180, tz=-(height + 2 * tol)))
 
 for name in stand_names:
-    hexapod.mate(
-        f"bottom?{name}", name=f"{name}_bottom", transforms=odict(rz=-90 if "f" in name else 90)
-    )
+    hexapod.mate(f"bottom?{name}", name=f"{name}_bottom", transforms=odict(rz=-90 if "f" in name else 90))
     hexapod.mate(f"{name}@faces@<X", name=name, origin=True, transforms=odict(rx=180))
 
 for name in base_holes_names:
@@ -218,9 +210,7 @@ for name in base_holes_names:
 for name in leg_names:
     lower, upper, angle = ("top", "bottom", -75) if "left" in name else ("bottom", "top", -75)
     hexapod.mate(f"{name}?{upper}", name=f"leg_{name}_hole", transforms=odict(rz=angle))
-    hexapod.mate(
-        f"{name}@faces@<Y", name=f"leg_{name}_hinge", origin=True, transforms=odict(rx=180, rz=-90)
-    )
+    hexapod.mate(f"{name}@faces@<Y", name=f"leg_{name}_hinge", origin=True, transforms=odict(rx=180, rz=-90))
     hexapod.mate(f"{name}/lower?{lower}", name=f"leg_{name}_lower_hole", origin=True)
 
 

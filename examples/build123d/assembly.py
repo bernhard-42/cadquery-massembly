@@ -18,8 +18,8 @@ with BuildPart() as c:
     Fillet(*c.edges(), radius=0.1)
 
 fs = b.faces().sort_by(Axis.Z)
-c1 = fs[-2].center().Z
-c2 = fs[-8].center().Z
+c1 = fs[-2].center(CenterOf.MASS).Z
+c2 = fs[-8].center(CenterOf.MASS).Z
 
 print(c1, c2)
 # %%
@@ -71,11 +71,15 @@ show(a, render_mates=True, mate_scale=0.2, transparent=True)
 
 mates = []
 for i in range(10):
-    mates.append(Mate(b.faces().sort_by()[-i], name=f"m{i}", center_of=CenterOf.GEOMETRY))
+    mates.append(Mate(b.faces().sort_by()[-i], name=f"m{i}"))
 
 with BuildAssembly(name="assy") as t:
     with Mates(*mates):
         Part(b, name="box")
 
 show(t, render_mates=True, mate_scale=0.1)
+# %%
+
+show(b, b.faces().group_by()[-3], reset_camera=False)
+
 # %%
