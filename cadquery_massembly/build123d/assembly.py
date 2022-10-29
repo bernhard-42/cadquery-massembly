@@ -1,14 +1,54 @@
-from typing import Union, Dict, List
-
+from typing import Union, Dict, List, overload
+from webcolors import name_to_rgb
 from build123d.direct_api import Location, Compound
 
 
 class Color:
-    def __init__(self, r: int = 0, g: int = 0, b: int = 0, a: float = 1):
-        self.r = r
-        self.g = g
-        self.b = b
-        self.a = a
+    @overload
+    def __init__(self):
+        ...
+
+    @overload
+    def __init__(self, color: str, a=1):
+        ...
+
+    @overload
+    def __init__(self, r: int, g: int, b: int, a: float = 1):
+        ...
+
+    def __init__(self, *args):
+        if len(args) == 0:
+            self.r = 0
+            self.g = 0
+            self.b = 0
+            self.a = 1.0
+
+        elif len(args) >= 1 and isinstance(args[0], str):
+            rgb = name_to_rgb(args[0])
+            self.r = rgb.red
+            self.g = rgb.green
+            self.b = rgb.blue
+            if len(args) == 2:
+                self.a = args[1]
+            else:
+                self.a = 1.0
+
+        elif (
+            len(args) >= 3
+            and isinstance(args[0], int)
+            and isinstance(args[1], int)
+            and isinstance(args[2], int)
+        ):
+            self.r = args[0]
+            self.g = args[1]
+            self.b = args[2]
+            if len(args) == 4 and args[3] < 1.0:
+                self.a = args[3]
+            else:
+                self.a = 1.0
+
+        else:
+            raise ValueError(f"Cannot define color from {args}")
 
     def to_tuple(self, percentage=False):
         if percentage:
