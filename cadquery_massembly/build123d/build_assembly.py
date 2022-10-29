@@ -35,7 +35,9 @@ class MateDef:
 
 class BuildAssembly:
     # Context variable used by Parts to link to current builder instance
-    _current: contextvars.ContextVar["BuildAssembly"] = contextvars.ContextVar("BuildAssembly._current")
+    _current: contextvars.ContextVar["BuildAssembly"] = contextvars.ContextVar(
+        "BuildAssembly._current"
+    )
 
     @property
     def _obj(self):
