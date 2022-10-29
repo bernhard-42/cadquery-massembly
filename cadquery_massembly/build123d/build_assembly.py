@@ -75,7 +75,7 @@ class BuildAssembly:
         self.assembly.add(obj)
         for name, mate_def in obj.mates.items():
             if self.assembly.mates.get(name) is not None:
-                raise ValueError("Unique mate names required:", name)
+                raise ValueError(f"Unique mate names required: {name}")
 
             self.assembly.mates[name] = mate_def
 
