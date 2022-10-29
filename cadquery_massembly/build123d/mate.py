@@ -40,11 +40,21 @@ class Mate:
 
     @overload
     def __init__(
-        self, plane: Plane, name: str = "", is_origin: bool = False, center_of: CenterOf = CenterOf.BOUNDING_BOX
+        self,
+        plane: Plane,
+        name: str = "",
+        is_origin: bool = False,
+        center_of: CenterOf = CenterOf.BOUNDING_BOX,
     ):
         ...
 
-    def __init__(self, *args, name: str = "", is_origin: bool = False, center_of: CenterOf = CenterOf.BOUNDING_BOX):
+    def __init__(
+        self,
+        *args,
+        name: str = "",
+        is_origin: bool = False,
+        center_of: CenterOf = CenterOf.BOUNDING_BOX,
+    ):
 
         self.name = name
         self.is_origin = is_origin
