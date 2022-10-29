@@ -66,7 +66,7 @@ class Mate:
             self.x_dir = Vector(val.x_dir.to_tuple())
             self.z_dir = Vector(val.z_dir.to_tuple())
 
-        elif len(args) == 1 and isinstance(args[0], (Edge, Wire)):
+        elif len(args) == 1 and isinstance(args[0], Edge):
             val = args[0]
 
             self.z_dir = val.normal()
@@ -83,8 +83,14 @@ class Mate:
 
             self.y_dir = self.z_dir.cross(self.x_dir)
 
-        elif len(args) == 1 and isinstance(args[0], Face):
+        elif len(args) == 1 and isinstance(args[0], (Face, Wire)):
             val = args[0]
+
+            if isinstance(val, Wire):
+                if val.is_closed():
+                    val = Face.make_from_wires(val)
+                else:
+                    raise ValueError("Only closed wires supported")
 
             self.origin = val.center(center_of)
 
@@ -103,7 +109,9 @@ class Mate:
             self.y_dir = self.z_dir.cross(self.x_dir)
 
         else:
-            raise ValueError(f"Needs a 1-3 Vectors or a single Mate, Plane, Face, Edge or Wire, not {args}")
+            raise ValueError(
+                f"Needs a 1-3 Vectors or a single Mate, Plane, Face, Edge or Wire, not {args}"
+            )
 
         if self.name == "":
             raise ValueError("name cannot be empty")
