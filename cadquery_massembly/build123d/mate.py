@@ -131,6 +131,10 @@ class Mate:
     def to_plane(self) -> Plane:
         return Plane(self.origin, self.x_dir, self.z_dir)
 
+    def rename(self, name):
+        self.name = name
+        return self
+
     def translate(self, vector: VectorLike):
         """
         Translate with a given direction scaled by dist
