@@ -35,7 +35,7 @@ class Base:
             "front_stand": (0.75 * length, 0),
             "back_stand": (-0.8 * length, 0),
         }
-        self.stand_wires = {}
+        self.stand_edges = {}
 
         self.obj = None
 
@@ -66,16 +66,14 @@ class Base:
                         5 * thickness,
                         mode=Mode.SUBTRACT,
                     )
-                self.stand_wires[name] = Wire.make_wire(
-                    base.edges(Select.LAST).group_by()[0], sequenced=True
-                )
+                self.stand_edges[name] = base.edges(Select.LAST).group_by()[0]
 
         self.obj = base
         return base
 
     def mates(self):
         m = {name: Mate(edge, name=name) for name, edge in self.base_edges.items()}
-        m2 = {name: Mate(edge, name=name) for name, edge in self.stand_wires.items()}
+        m2 = {name: Mate(edge, name=name) for name, edge in self.stand_edges.items()}
         m.update(m2)
         m["base"] = Mate(self.obj.faces().sort_by()[-1], name="base").translated(
             (0, 0, height + 2 * tol)
@@ -200,20 +198,25 @@ class LowerLeg:
 
 _base = Base()
 base = _base.create()
-show_object(base, name="base", clear=True)
+# show_object(base, name="base", clear=True)
 
 _stand = Stand()
 stand = _stand.create()
-show_object(stand.part.translate((100, 0, 0)), name="stand")
+# show_object(stand.part.translate((100, 0, 0)), name="stand")
 
 _upper_leg = UpperLeg()
 upper_leg = _upper_leg.create()
-show_object(upper_leg.part.translate((-100, 20, 0)), name="upper_leg")
+# show_object(upper_leg.part.translate((-100, 20, 0)), name="upper_leg")
 
 _lower_leg = LowerLeg()
 lower_leg = _lower_leg.create()
-show_object(lower_leg.part.translate((-100, -100, 0)), name="lower_leg")
+# show_object(lower_leg.part.translate((-100, -100, 0)), name="lower_leg")
 
+
+# show(base, *_base.mates().values(), transparent=True)
+# show(stand, *_stand.mates().values(), transparent=True)
+# show(lower_leg, *_lower_leg.mates().values(), transparent=True)
+show(upper_leg, *_upper_leg.mates().values(), transparent=True)
 
 # %%
 
@@ -286,18 +289,22 @@ from jupyter_cadquery.animation import Animation
 
 horizontal_angle = 25
 
+
 def intervals(count):
     r = [min(180, (90 + i * (360 // count)) % 360) for i in range(count)]
     return r
 
+
 def times(end, count):
     return np.linspace(0, end, count + 1)
+
 
 def vertical(count, end, offset, reverse):
     ints = intervals(count)
     heights = [round(35 * np.sin(np.deg2rad(x)) - 15, 1) for x in ints]
     heights.append(heights[0])
     return times(end, count), heights[offset:] + heights[1 : offset + 1]
+
 
 def horizontal(end, reverse):
     factor = 1 if reverse else -1
@@ -309,15 +316,14 @@ def horizontal(end, reverse):
         0,
     ]
 
+
 leg_group = ("left_front", "right_middle", "left_back")
 
 animation = Animation()
 
 for name in _base.base_hinges.keys():
     # move upper leg
-    animation.add_track(
-        f"/hexapod/{name}_leg", "rz", *horizontal(4, "middle" in name)
-    )
+    animation.add_track(f"/hexapod/{name}_leg", "rz", *horizontal(4, "middle" in name))
 
     # move lower leg
     animation.add_track(
