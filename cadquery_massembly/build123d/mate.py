@@ -10,7 +10,8 @@ from build123d import (
     Edge,
     Face,
     Wire,
-    Shape,
+    Compound,
+    ShapeList,
     CenterOf,
 )
 
@@ -31,7 +32,7 @@ class Mate:
     @overload
     def __init__(
         self,
-        shape: Union[Face, Wire, Edge],
+        shape: Union[Face, Wire, Edge, ShapeList],
         name: str = "",
         is_origin: bool = False,
         center_of: CenterOf = CenterOf.BOUNDING_BOX,
@@ -93,7 +94,7 @@ class Mate:
 
             self.y_dir = self.z_dir.cross(self.x_dir)
 
-        elif len(args) == 1 and isinstance(args[0], (Face, Wire)):
+        elif len(args) == 1 and isinstance(args[0], (Face, Wire, ShapeList)):
             val = args[0]
 
             if isinstance(val, Wire):
@@ -101,6 +102,12 @@ class Mate:
                     val = Face.make_from_wires(val)
                 else:
                     raise ValueError("Only closed wires supported")
+
+            elif isinstance(val, ShapeList):
+                if all([isinstance(o, Edge) for o in val]):
+                    val = Face.make_from_wires(Wire.make_wire(val, sequenced=True))
+                else:
+                    raise ValueError("Only ShapeLists of Edges supported")
 
             self.origin = val.center(center_of)
 
