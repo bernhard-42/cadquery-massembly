@@ -163,3 +163,37 @@ class Assemble:
             o_assy.loc = o_assy.loc * t_mate.loc * o_mate.loc.inverse
         else:
             o_assy.loc = target
+
+
+class Relocate:
+    def __init__(self):
+        """Relocate the assembly so that all its shapes have their origin at the assembly origin"""
+
+        def _relocate(assembly, origins):
+            origin_mate = origins.get(assembly.name)
+            if origin_mate is not None:
+                assembly.obj = (
+                    None
+                    if assembly.obj is None
+                    else assembly.obj.moved(origin_mate.loc.inverse)
+                )
+                assembly.loc = Location()
+            for c in assembly.children:
+                _relocate(c, origins)
+
+        context = BuildAssembly._get_context()
+
+        origins = {
+            mate_def.assembly.name: mate_def.mate
+            for mate_def in context.assembly.mates.values()
+            if mate_def.mate.is_origin
+        }
+
+        # relocate all objects
+        _relocate(context.assembly, origins)
+
+        # relocate all mates
+        for mate_def in context.assembly.mates.values():
+            origin_mate = origins.get(mate_def.assembly.name)
+            if origin_mate is not None:
+                mate_def.mate = mate_def.mate.moved(origin_mate.loc.inverse)
