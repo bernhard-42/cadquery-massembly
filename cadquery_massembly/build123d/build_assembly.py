@@ -1,14 +1,8 @@
 import contextvars
 from dataclasses import dataclass
-from typing import Union, List
+from typing import Union
 
-from build123d import (
-    Location,
-    BuildPart,
-    Face,
-    Wire,
-    Edge,
-)
+from build123d import Location, BuildPart
 
 from .assembly import MAssembly, Color
 from .mate import Mate
@@ -63,8 +57,11 @@ class BuildAssembly:
         if self._parent is not None:
             self._parent._add_to_context(self._obj)
 
-    def __init__(self):
-        self.assembly = None
+    def __init__(self, name=None):
+        if name is None:
+            self.assembly = None
+        else:
+            self.assembly = MAssembly(name=name, loc=Location())
 
     def _add_to_context(self, obj: MAssembly):
         if self.assembly is None:
@@ -157,8 +154,8 @@ class Assemble:
             if o_assy.parent == t_assy.parent or o_assy.parent is None:
                 o_assy.loc = t_assy.loc
             else:
-                o_assy.loc = t_assy.loc * o_assy.parent.loc.inverse
-            o_assy.loc = o_assy.loc * t_mate.loc * o_mate.loc.inverse
+                o_assy.loc = t_assy.loc * o_assy.parent.loc.inverse()
+            o_assy.loc = o_assy.loc * t_mate.loc * o_mate.loc.inverse()
         else:
             o_assy.loc = target
 
@@ -173,7 +170,7 @@ class Relocate:
                 assembly.obj = (
                     None
                     if assembly.obj is None
-                    else assembly.obj.moved(origin_mate.loc.inverse)
+                    else assembly.obj.moved(origin_mate.loc.inverse())
                 )
                 assembly.loc = Location()
             for c in assembly.children:
@@ -194,4 +191,4 @@ class Relocate:
         for mate_def in context.assembly.mates.values():
             origin_mate = origins.get(mate_def.assembly.name)
             if origin_mate is not None:
-                mate_def.mate = mate_def.mate.moved(origin_mate.loc.inverse)
+                mate_def.mate = mate_def.mate.moved(origin_mate.loc.inverse())
