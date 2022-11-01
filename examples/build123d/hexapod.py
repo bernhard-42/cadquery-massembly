@@ -199,31 +199,38 @@ set_defaults(mate_scale=3)
 
 _base = Base()
 base = _base.create()
-show_object(base, name="base", mates=_base.mates(), clear=True)
+show_object(base, name="base", mates=_base.mates(), clear=True, transparent=True)
 
 # %%
 
 _stand = Stand()
 stand = _stand.create()
-show_object(stand, name="stand", mates=_stand.mates(), clear=True)
+show_object(stand, name="stand", mates=_stand.mates(), clear=True, transparent=True)
 
 # %%
 
 _upper_leg = UpperLeg()
 upper_leg = _upper_leg.create()
-show_object(upper_leg.part, name="upper_leg", mates=_upper_leg.mates(), clear=True)
+show_object(
+    upper_leg.part,
+    name="upper_leg",
+    mates=_upper_leg.mates(),
+    clear=True,
+    transparent=True,
+)
 
 # %%
 
 _lower_leg = LowerLeg()
 lower_leg = _lower_leg.create()
-show_object(lower_leg.part, name="lower_leg", mates=_lower_leg.mates(), clear=True)
+show_object(
+    lower_leg.part,
+    name="lower_leg",
+    mates=_lower_leg.mates(),
+    clear=True,
+    transparent=True,
+)
 
-
-# show(base, *_base.mates().values(), transparent=True)
-# show(stand, *_stand.mates().values(), transparent=True)
-# show(lower_leg, *_lower_leg.mates().values(), transparent=True)
-show(upper_leg, *_upper_leg.mates().values(), transparent=True)
 
 # %%
 
@@ -244,7 +251,7 @@ def base_rot(mate):
         return mate.rotated((0, 180, angle))
 
 
-with BuildAssembly(name="hexapod") as a:
+with BuildAssembly() as a:
 
     with Mates(*[base_rot(v) for k, v in _base.mates().items() if k != "top"]):
         Part(base, name="base", color=Color("gray"))
@@ -257,22 +264,26 @@ with BuildAssembly(name="hexapod") as a:
             Part(stand, name=name, color=Color(128, 204, 230))
 
     for name in _base.base_hinges.keys():
-        with BuildAssembly(name=f"{name}_leg"):
+        with BuildAssembly():
 
             m = _upper_leg.mates()
             suffix = "bottom" if "left" in name else "top"
             with Mates(
                 m["knee_" + suffix].rename(f"{name}_knee"),
-                m["hinge"].rename(f"{name}_hinge"),
+                m["hinge"].rename(f"{name}_hinge").set_origin(),
             ):
-                Part(upper_leg, name=f"{name}_upper")
+                Part(upper_leg, name=f"{name}")
 
-            m = _lower_leg.mates()
-            suffix = "top" if "left" in name else "bottom"
-            with Mates(
-                m["knee_" + suffix].rotated((0, 0, -75)).rename(f"{name}_lower_knee")
-            ):
-                Part(lower_leg, name=f"{name}_lower")
+            with BuildAssembly():
+                m = _lower_leg.mates()
+                suffix = "top" if "left" in name else "bottom"
+                with Mates(
+                    m["knee_" + suffix]
+                    .rotated((0, 0, -75))
+                    .rename(f"{name}_lower_knee")
+                    .set_origin()
+                ):
+                    Part(lower_leg, name=f"{name}_lower")
 
     Relocate()
 
@@ -285,11 +296,10 @@ with BuildAssembly(name="hexapod") as a:
 
     Assemble("top", "base")
 
-show(a, render_mates=False, mate_scale=5, reset_camera=True)
+show(a, render_mates=True, mate_scale=5, reset_camera=True)
 # %%
 import numpy as np
 from jupyter_cadquery.animation import Animation
-
 
 horizontal_angle = 25
 
@@ -305,7 +315,7 @@ def times(end, count):
 
 def vertical(count, end, offset, reverse):
     ints = intervals(count)
-    heights = [round(35 * np.sin(np.deg2rad(x)) - 15, 1) for x in ints]
+    heights = [round(20 * np.sin(np.deg2rad(x) - 15), 1) for x in ints]
     heights.append(heights[0])
     return times(end, count), heights[offset:] + heights[1 : offset + 1]
 
@@ -327,15 +337,15 @@ animation = Animation()
 
 for name in _base.base_hinges.keys():
     # move upper leg
-    animation.add_track(f"/hexapod/{name}_leg", "rz", *horizontal(4, "middle" in name))
+    animation.add_track(f"/base/{name}", "rz", *horizontal(4, "middle" in name))
 
     # move lower leg
     animation.add_track(
-        f"/hexapod/{name}_leg/{name}_lower",
+        f"/base/{name}/{name}_lower",
         "rz",
         *vertical(8, 4, 0 if name in leg_group else 4, "left" in name),
     )
 
-animation.animate(speed=1)
+animation.animate(speed=2)
 
 # %%
