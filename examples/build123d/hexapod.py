@@ -8,6 +8,7 @@ from cadquery_massembly.build123d import (
 )
 from build123d import *
 from cq_vscode import show, show_object
+from jupyter_cadquery.defaults import set_defaults
 
 thickness = 2
 height = 40
@@ -146,17 +147,15 @@ class UpperLeg:
         return upper_leg
 
     def mates(self):
-        suffix = ["top", "bottom"]
-        return {
-            "hinge": Mate(self.obj.faces().sort_by(Axis.X)[0], name=f"hinge"),
-            "knee": [
-                Mate(
-                    self.obj.edges().group_by(Axis.Y)[-3].sort_by()[ind],
-                    name=f"knee_{suffix[ind]}",
-                )
-                for ind in [0, 1]
-            ],
+        m = {
+            f"knee_{suffix}": Mate(
+                self.obj.edges().group_by(Axis.Y)[-3].sort_by()[ind],
+                name=f"knee_{suffix[ind]}",
+            )
+            for ind, suffix in enumerate(["top", "bottom"])
         }
+        m["hinge"] = Mate(self.obj.faces().sort_by(Axis.X)[0], name=f"hinge")
+        return m
 
 
 class LowerLeg:
@@ -187,31 +186,38 @@ class LowerLeg:
 
     def mates(self):
         return {
-            "knee": [
-                Mate(
-                    self.obj.edges().group_by(Axis.Y)[4].sort_by()[ind],
-                    name=f"knee",
-                )
-                for ind in [0, 1]
-            ]
+            f"knee_{suffix}": Mate(
+                self.obj.edges().group_by(Axis.Y)[4].sort_by()[ind],
+                name=f"knee_{suffix}",
+            )
+            for ind, suffix in enumerate(["top", "bottom"])
         }
 
+set_defaults(mate_scale=3)
+
+# %%
 
 _base = Base()
 base = _base.create()
-show_object(base, name="base", clear=True)
+show_object(base, name="base", mates=_base.mates(), clear=True)
+
+# %%
 
 _stand = Stand()
 stand = _stand.create()
-show_object(stand.part.translate((100, 0, 0)), name="stand")
+show_object(stand, name="stand", mates=_stand.mates(), clear=True)
+
+# %%
 
 _upper_leg = UpperLeg()
 upper_leg = _upper_leg.create()
-show_object(upper_leg.part.translate((-100, 20, 0)), name="upper_leg")
+show_object(upper_leg.part, name="upper_leg", mates=_upper_leg.mates(), clear=True)
+
+# %%
 
 _lower_leg = LowerLeg()
 lower_leg = _lower_leg.create()
-show_object(lower_leg.part.translate((-100, -100, 0)), name="lower_leg")
+show_object(lower_leg.part, name="lower_leg", mates=_lower_leg.mates(), clear=True)
 
 
 # %%
@@ -239,7 +245,7 @@ with BuildAssembly(name="hexapod") as a:
         Part(base, name="base", color=Color("gray"))
 
     with Mates(_base.mates()["top"]):
-        Part(base, name="top", color=Color(204,204,204))
+        Part(base, name="top", color=Color(204, 204, 204))
 
     for name in _base.stand_holes.keys():
         with Mates(_stand.mates()["bottom"].rename(f"{name}_bottom")):
@@ -249,17 +255,17 @@ with BuildAssembly(name="hexapod") as a:
         with BuildAssembly(name=f"{name}_leg"):
 
             m = _upper_leg.mates()
-            ind = 1 if "left" in name else 0
+            suffix = "bottom" if "left" in name else "top"
             with Mates(
-                m["knee"][ind].rename(f"{name}_knee"),
+                m["knee_" + suffix].rename(f"{name}_knee"),
                 m["hinge"].rename(f"{name}_hinge"),
             ):
                 Part(upper_leg, name=f"{name}_upper")
 
             m = _lower_leg.mates()
-            ind = 0 if "left" in name else 1
+            suffix = "top" if "left" in name else "bottom"
             with Mates(
-                m["knee"][ind].rotated((0, 0, -75)).rename(f"{name}_lower_knee")
+                m["knee_" + suffix].rotated((0, 0, -75)).rename(f"{name}_lower_knee")
             ):
                 Part(lower_leg, name=f"{name}_lower")
 
