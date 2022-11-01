@@ -131,6 +131,7 @@ class Mate:
             )
 
         if self.name == "":
+            print(self)
             raise ValueError("name cannot be empty")
 
     def __repr__(self) -> str:
@@ -150,6 +151,10 @@ class Mate:
 
     def rename(self, name):
         self.name = name
+        return self
+
+    def set_origin(self):
+        self.is_origin = True
         return self
 
     def translate(self, vector: VectorLike):
@@ -202,7 +207,11 @@ class Mate:
 
         origin, x_dir = move(self.origin, self.x_dir, loc)
         _, z_dir = move(self.origin, self.z_dir, loc)
-        return Mate(origin, x_dir, z_dir)
+
+        self.origin = origin
+        self.x_dir = x_dir
+        self.z_dir = z_dir
+        self.y_dir = z_dir.cross(x_dir)
 
     def moved(self, loc: Location) -> "Mate":
         """

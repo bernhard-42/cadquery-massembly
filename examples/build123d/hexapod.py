@@ -4,6 +4,7 @@ from cadquery_massembly.build123d import (
     Part,
     Mate,
     Assemble,
+    Relocate,
     Color,
 )
 from build123d import *
@@ -35,7 +36,7 @@ class Base:
             "front_stand": (0.75 * length, 0),
             "back_stand": (-0.8 * length, 0),
         }
-        self.stand_wires = {}
+        self.stand_edges = {}
 
         self.obj = None
 
@@ -66,16 +67,14 @@ class Base:
                         5 * thickness,
                         mode=Mode.SUBTRACT,
                     )
-                self.stand_wires[name] = Wire.make_wire(
-                    base.edges(Select.LAST).group_by()[0], sequenced=True
-                )
+                self.stand_edges[name] = base.edges(Select.LAST).group_by()[0]
 
         self.obj = base
         return base
 
     def mates(self):
         m = {name: Mate(edge, name=name) for name, edge in self.base_edges.items()}
-        m2 = {name: Mate(edge, name=name) for name, edge in self.stand_wires.items()}
+        m2 = {name: Mate(edge, name=name) for name, edge in self.stand_edges.items()}
         m.update(m2)
         m["base"] = Mate(self.obj.faces().sort_by()[-1], name="base").translated(
             (0, 0, height + 2 * tol)
@@ -193,6 +192,7 @@ class LowerLeg:
             for ind, suffix in enumerate(["top", "bottom"])
         }
 
+
 set_defaults(mate_scale=3)
 
 # %%
@@ -219,6 +219,11 @@ _lower_leg = LowerLeg()
 lower_leg = _lower_leg.create()
 show_object(lower_leg.part, name="lower_leg", mates=_lower_leg.mates(), clear=True)
 
+
+# show(base, *_base.mates().values(), transparent=True)
+# show(stand, *_stand.mates().values(), transparent=True)
+# show(lower_leg, *_lower_leg.mates().values(), transparent=True)
+show(upper_leg, *_upper_leg.mates().values(), transparent=True)
 
 # %%
 
@@ -269,6 +274,9 @@ with BuildAssembly(name="hexapod") as a:
             ):
                 Part(lower_leg, name=f"{name}_lower")
 
+    Relocate()
+
+    for name in _base.base_hinges.keys():
         Assemble(f"{name}_hinge", name)
         Assemble(f"{name}_lower_knee", f"{name}_knee")
 
@@ -277,8 +285,57 @@ with BuildAssembly(name="hexapod") as a:
 
     Assemble("top", "base")
 
-show(a, render_mates=True, mate_scale=5, reset_camera=True)
+show(a, render_mates=False, mate_scale=5, reset_camera=True)
 # %%
+import numpy as np
+from jupyter_cadquery.animation import Animation
 
+
+horizontal_angle = 25
+
+
+def intervals(count):
+    r = [min(180, (90 + i * (360 // count)) % 360) for i in range(count)]
+    return r
+
+
+def times(end, count):
+    return np.linspace(0, end, count + 1)
+
+
+def vertical(count, end, offset, reverse):
+    ints = intervals(count)
+    heights = [round(35 * np.sin(np.deg2rad(x)) - 15, 1) for x in ints]
+    heights.append(heights[0])
+    return times(end, count), heights[offset:] + heights[1 : offset + 1]
+
+
+def horizontal(end, reverse):
+    factor = 1 if reverse else -1
+    return times(end, 4), [
+        0,
+        factor * horizontal_angle,
+        0,
+        -factor * horizontal_angle,
+        0,
+    ]
+
+
+leg_group = ("left_front", "right_middle", "left_back")
+
+animation = Animation()
+
+for name in _base.base_hinges.keys():
+    # move upper leg
+    animation.add_track(f"/hexapod/{name}_leg", "rz", *horizontal(4, "middle" in name))
+
+    # move lower leg
+    animation.add_track(
+        f"/hexapod/{name}_leg/{name}_lower",
+        "rz",
+        *vertical(8, 4, 0 if name in leg_group else 4, "left" in name),
+    )
+
+animation.animate(speed=1)
 
 # %%
