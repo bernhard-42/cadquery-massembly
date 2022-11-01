@@ -23,18 +23,18 @@ class Base:
     def __init__(self):
         x1, x2 = 0.63, 0.87
         self.base_hinges = {
-            "right_back": (-x1 * length, -x1 * width),
+            "right_front": (-x1 * length, -x1 * width),
             "right_middle": (0, -x2 * width),
-            "right_front": (x1 * length, -x1 * width),
-            "left_back": (-x1 * length, x1 * width),
+            "right_back": (x1 * length, -x1 * width),
+            "left_front": (-x1 * length, x1 * width),
             "left_middle": (0, x2 * width),
-            "left_front": (x1 * length, x1 * width),
+            "left_back": (x1 * length, x1 * width),
         }
         self.base_edges = {}
 
         self.stand_holes = {
-            "front_stand": (0.75 * length, 0),
-            "back_stand": (-0.8 * length, 0),
+            "front_stand": (-0.8 * length, 0),
+            "back_stand": (0.75 * length, 0),
         }
         self.stand_edges = {}
 
@@ -129,7 +129,7 @@ class UpperLeg:
                 with BuildLine():
                     Polyline(*points)
                     Mirror(about=Plane.XZ)
-                BuildFace()
+                MakeFace()
             Extrude(amount=thickness)
             Fillet(upper_leg.edges().sort_by(Axis.Y)[-1], radius=4)
 
@@ -173,9 +173,9 @@ class LowerLeg:
                 with BuildLine():
                     Polyline(*points)
                     Mirror(about=Plane.XZ)
-                BuildFace()
+                MakeFace()
             Extrude(amount=thickness)
-            Fillet(*lower_leg.edges().filter_by_axis(Axis.Z), radius=4)
+            Fillet(*lower_leg.edges().filter_by(Axis.Z), radius=4)
 
             with Locations(upper_leg_hole):
                 Hole(diam / 2 + tol)
@@ -237,12 +237,12 @@ show_object(
 
 def base_rot(mate):
     angles = {
-        "right_back": -75,
+        "right_back": -105,
         "right_middle": -90,
-        "right_front": -105,
-        "left_back": 75,
+        "right_front": -75,
+        "left_back": 105,
         "left_middle": 90,
-        "left_front": 105,
+        "left_front": 75,
     }
     angle = angles.get(mate.name, 0)
     if angle == 0:
@@ -251,7 +251,7 @@ def base_rot(mate):
         return mate.rotated((0, 180, angle))
 
 
-with BuildAssembly() as a:
+with BuildAssembly(name="hexapod") as a:
 
     with Mates(*[base_rot(v) for k, v in _base.mates().items() if k != "top"]):
         Part(base, name="base", color=Color("gray"))
@@ -260,7 +260,7 @@ with BuildAssembly() as a:
         Part(base, name="top", color=Color(204, 204, 204))
 
     for name in _base.stand_holes.keys():
-        with Mates(_stand.mates()["bottom"].rename(f"{name}_bottom")):
+        with Mates(_stand.mates()["bottom"].renamed(f"{name}_bottom")):
             Part(stand, name=name, color=Color(128, 204, 230))
 
     for name in _base.base_hinges.keys():
@@ -269,18 +269,18 @@ with BuildAssembly() as a:
             m = _upper_leg.mates()
             suffix = "bottom" if "left" in name else "top"
             with Mates(
-                m["knee_" + suffix].rename(f"{name}_knee"),
-                m["hinge"].rename(f"{name}_hinge").set_origin(),
+                m["knee_" + suffix].renamed(f"{name}_knee"),
+                m["hinge"].renamed(f"{name}_hinge").set_origin(),
             ):
-                Part(upper_leg, name=f"{name}")
+                Part(upper_leg, name=f"{name}_leg")
 
             with BuildAssembly():
                 m = _lower_leg.mates()
                 suffix = "top" if "left" in name else "bottom"
                 with Mates(
                     m["knee_" + suffix]
+                    .renamed(f"{name}_lower_knee")
                     .rotated((0, 0, -75))
-                    .rename(f"{name}_lower_knee")
                     .set_origin()
                 ):
                     Part(lower_leg, name=f"{name}_lower")
@@ -337,11 +337,11 @@ animation = Animation()
 
 for name in _base.base_hinges.keys():
     # move upper leg
-    animation.add_track(f"/base/{name}", "rz", *horizontal(4, "middle" in name))
+    animation.add_track(f"/hexapod/{name}_leg", "rz", *horizontal(4, "middle" in name))
 
     # move lower leg
     animation.add_track(
-        f"/base/{name}/{name}_lower",
+        f"/hexapod/{name}_leg/{name}_lower",
         "rz",
         *vertical(8, 4, 0 if name in leg_group else 4, "left" in name),
     )
