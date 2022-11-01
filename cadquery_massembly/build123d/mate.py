@@ -148,7 +148,11 @@ class Mate:
 
     def rename(self, name):
         self.name = name
-        return self
+
+    def renamed(self, name):
+        mate = Mate(self)  # copy mate
+        mate.name = name
+        return mate
 
     def set_origin(self):
         self.is_origin = True
