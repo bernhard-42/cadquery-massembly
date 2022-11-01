@@ -63,21 +63,19 @@ class BuildAssembly:
         if self._parent is not None:
             self._parent._add_to_context(self._obj)
 
-    def __init__(
-        self,
-        name: str,
-        loc: Location = Location(),
-    ):
-        self.assembly = MAssembly(name=name, loc=loc)
-        self.assembly.mates = {}
+    def __init__(self):
+        self.assembly = None
 
     def _add_to_context(self, obj: MAssembly):
-        self.assembly.add(obj)
-        for name, mate_def in obj.mates.items():
-            if self.assembly.mates.get(name) is not None:
-                raise ValueError(f"Unique mate names required: {name}")
+        if self.assembly is None:
+            self.assembly = obj
+        else:
+            self.assembly.add(obj)
+            for name, mate_def in obj.mates.items():
+                if self.assembly.mates.get(name) is not None:
+                    raise ValueError(f"Unique mate names required: {name}")
 
-            self.assembly.mates[name] = mate_def
+                self.assembly.mates[name] = mate_def
 
     @classmethod
     def _get_context(cls) -> "BuildAssembly":
