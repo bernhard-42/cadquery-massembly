@@ -1,6 +1,4 @@
-from dataclasses import dataclass
 from typing import overload, Union, Tuple
-from math import pi
 from build123d import (
     Vector,
     VectorLike,
@@ -10,7 +8,6 @@ from build123d import (
     Edge,
     Face,
     Wire,
-    Compound,
     ShapeList,
     CenterOf,
 )
