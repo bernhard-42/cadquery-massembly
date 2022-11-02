@@ -13,6 +13,16 @@ from build123d import (
 )
 
 
+def center(obj, center_of=CenterOf.MASS):
+    if center_of == CenterOf.MASS:
+        return obj.center_of_mass
+    elif center_of == CenterOf.BOUNDING_BOX:
+        bb = obj.bounding_box()
+        return bb.center
+    elif center_of == CenterOf.GEOMETRY:
+        return obj.center_of_geometry
+
+
 class Mate:
     @overload
     def __init__(
@@ -81,7 +91,7 @@ class Mate:
 
             vertices = val.vertices()
             if len(vertices) == 1:  # e.g. a single closed spline
-                self.origin = val.center(center_of)
+                self.origin = center(val, center_of)
                 # Use the vector defined by the vertex and the origin as x direction
                 self.x_dir = Vector((vertices[0] - self.origin).to_tuple()).normalized()
             else:
@@ -106,7 +116,7 @@ class Mate:
                 else:
                     raise ValueError("Only ShapeLists of Edges supported")
 
-            self.origin = val.center(center_of)
+            self.origin = center(val, center_of)
 
             # x_dir, y_dir will be derived from the local coord system of the underlying plane
             p = val._geom_adaptor().Position()
