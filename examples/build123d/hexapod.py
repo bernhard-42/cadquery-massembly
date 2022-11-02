@@ -1,18 +1,25 @@
+from build123d import *
+
+import numpy as np
+from cq_vscode import show, show_object
+from jupyter_cadquery.defaults import set_defaults
+
 from cadquery_massembly.build123d import (
     BuildAssembly,
     Mates,
     Part,
     Mate,
     Assemble,
-    Relocate,
     Color,
+)
+
+from cadquery_massembly.build123d.animation import (
+    Relocate,
     BuildAnimation,
     Track,
     Animate,
 )
-from build123d import *
-from cq_vscode import show, show_object
-from jupyter_cadquery.defaults import set_defaults
+
 
 # %%
 
@@ -22,6 +29,10 @@ width = 65
 length = 100
 diam = 4
 tol = 0.05
+
+#
+# Base and top
+#
 
 
 class Base:
@@ -88,6 +99,11 @@ class Base:
         return m
 
 
+#
+# Stands
+#
+
+
 class Stand:
     def __init__(self):
         self.h = 5
@@ -117,6 +133,11 @@ class Stand:
 
     def mates(self):
         return {"bottom": Mate(self.obj.faces().sort_by(Axis.X)[0], name="bottom")}
+
+
+#
+# Legs
+#
 
 
 class UpperLeg:
@@ -239,6 +260,10 @@ show_object(
 
 # %%
 
+#
+# Assembly
+#
+
 
 def base_rot(mate):
     angles = {
@@ -302,69 +327,45 @@ with BuildAssembly(name="hexapod") as a:
     Assemble("top", "base")
 
 show(a, render_mates=True, mate_scale=5, reset_camera=True)
+
+print("\nAssembled objects:")
+for p in sorted(a.assembly.objs.keys()):
+    print("  ", p)
+
 # %%
 
-import numpy as np
-
-from jupyter_cadquery.animation import Animation
-
-horizontal_angle = 25
+#
+# Animation
+#
 
 
-def intervals(count):
-    r = [min(180, (90 + i * (360 // count)) % 360) for i in range(count)]
-    return r
-
-
-def times(end, count):
+def time_range(end, count):
     return np.linspace(0, end, count + 1)
 
 
-def vertical(count, end, offset, reverse):
-    ints = intervals(count)
+def vertical(count, end, offset):
+    ints = [min(180, (90 + i * (360 // count)) % 360) for i in range(count)]
     heights = [round(20 * np.sin(np.deg2rad(x) - 15), 1) for x in ints]
     heights.append(heights[0])
-    return times(end, count), heights[offset:] + heights[1 : offset + 1]
+    return time_range(end, count), heights[offset:] + heights[1 : offset + 1]
 
 
 def horizontal(end, reverse):
-    factor = 1 if reverse else -1
-    return times(end, 4), [
-        0,
-        factor * horizontal_angle,
-        0,
-        -factor * horizontal_angle,
-        0,
-    ]
+    horizontal_angle = 25
+    angle = horizontal_angle if reverse else -horizontal_angle
+    return time_range(end, 4), [0, angle, 0, -angle, 0]
 
-
-leg_group = ("left_front", "right_middle", "left_back")
-
-animation = Animation()
-
-for name in _base.base_hinges.keys():
-    # move upper leg
-    animation.add_track(f"/hexapod/{name}_leg", "rz", *horizontal(4, "middle" in name))
-
-    # move lower leg
-    animation.add_track(
-        f"/hexapod/{name}_leg/{name}_lower",
-        "rz",
-        *vertical(8, 4, 0 if name in leg_group else 4, "left" in name),
-    )
-
-animation.animate(speed=2)
-
-# %%
 
 with BuildAnimation():
+    leg_group = ("left_front", "right_middle", "left_back")
+
     for name in _base.base_hinges.keys():
         times, values = horizontal(4, "middle" in name)
         Track(f"/hexapod/{name}_leg", "rz", times, values)
 
-        times, values = vertical(8, 4, 0 if name in leg_group else 4, "left" in name)
+        times, values = vertical(8, 4, 0 if name in leg_group else 4)
         Track(f"/hexapod/{name}_leg/{name}_lower", "rz", times, values)
-    
-    Animate()
+
+    Animate(2)
 
 # %%
