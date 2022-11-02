@@ -6,10 +6,15 @@ from cadquery_massembly.build123d import (
     Assemble,
     Relocate,
     Color,
+    BuildAnimation,
+    Track,
+    Animate,
 )
 from build123d import *
 from cq_vscode import show, show_object
 from jupyter_cadquery.defaults import set_defaults
+
+# %%
 
 thickness = 2
 height = 40
@@ -298,7 +303,9 @@ with BuildAssembly(name="hexapod") as a:
 
 show(a, render_mates=True, mate_scale=5, reset_camera=True)
 # %%
+
 import numpy as np
+
 from jupyter_cadquery.animation import Animation
 
 horizontal_angle = 25
@@ -347,5 +354,17 @@ for name in _base.base_hinges.keys():
     )
 
 animation.animate(speed=2)
+
+# %%
+
+with BuildAnimation():
+    for name in _base.base_hinges.keys():
+        times, values = horizontal(4, "middle" in name)
+        Track(f"/hexapod/{name}_leg", "rz", times, values)
+
+        times, values = vertical(8, 4, 0 if name in leg_group else 4, "left" in name)
+        Track(f"/hexapod/{name}_leg/{name}_lower", "rz", times, values)
+    
+    Animate()
 
 # %%

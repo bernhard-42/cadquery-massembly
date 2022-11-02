@@ -192,3 +192,80 @@ class Relocate:
             origin_mate = origins.get(mate_def.assembly.name)
             if origin_mate is not None:
                 mate_def.mate = mate_def.mate.moved(origin_mate.loc.inverse())
+
+
+class AnimationTrack:
+    def __init__(self, path, action, times, values):
+        if len(times) != len(values):
+            raise ValueError("Parameters 'times' and 'values' need to have same length")
+        self.path = path
+        self.action = action
+        self.times = times
+        self.values = values
+        self.length = len(times)
+
+    def to_array(self):
+        """
+        Create an array representation of the animation track
+
+        Returns
+        -------
+        array-like
+            The 4 dim array comprising of the instance variables `path`, `action`, `times` and `values`
+        """
+
+        def tolist(obj):
+            if isinstance(obj, np.ndarray):
+                return obj.tolist()
+            elif isinstance(obj, (list, tuple)):
+                return [tolist(subarray) for subarray in obj]
+            else:
+                return obj
+
+        return [self.path, self.action, tolist(self.times), tolist(self.values)]
+
+
+class BuildAnimation:
+    # Context variable used to store Mates for the Part objects
+    _current: contextvars.ContextVar["BuildAnimation"] = contextvars.ContextVar(
+        "BuildAnimation._current"
+    )
+
+    @property
+    def _obj(self):
+        return self.tracks
+
+    @property
+    def _obj_name(self):
+        return "animation"
+
+    def __enter__(self):
+        """Upon entering record the parent and a token to restore contextvars"""
+
+        self._parent = BuildAnimation._get_context()
+        self._reset_tok = self._current.set(self)
+
+        return self
+
+    def __exit__(self, exception_type, exception_value, traceback):
+        """Upon exiting restore context and send object to parent"""
+
+        self._current.reset(self._reset_tok)
+
+    def __init__(self, *objs: Mate):
+        self.tracks = []
+
+    def _add_to_context(self, track: AnimationTrack):
+        self.tracks.append(track)
+
+    @classmethod
+    def _get_context(cls) -> "BuildAnimation":
+        """Return the instance of the current builder"""
+        return cls._current.get(None)
+
+
+class Track:
+    def __init__(self, path, action, times, values):
+        context = BuildAnimation._get_context()
+        track = AnimationTrack(path, action, times, values)
+        context._add_to_context(track)
