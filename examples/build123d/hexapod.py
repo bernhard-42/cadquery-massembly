@@ -281,7 +281,7 @@ def base_rot(mate):
         return mate.rotated((0, 180, angle))
 
 
-with BuildAssembly(name="hexapod") as a:
+with BuildAssembly() as hexapod:
 
     with Mates(*[base_rot(v) for k, v in _base.mates().items() if k != "top"]):
         Part(base, name="base", color=Color("gray"))
@@ -313,7 +313,7 @@ with BuildAssembly(name="hexapod") as a:
                     .rotated((0, 0, -75))
                     .set_origin()
                 ):
-                    Part(lower_leg, name=f"{name}_lower")
+                    Part(lower_leg, name=f"lower_leg")
 
     Relocate()
 
@@ -326,10 +326,10 @@ with BuildAssembly(name="hexapod") as a:
 
     Assemble("top", "base")
 
-show(a, render_mates=True, mate_scale=5, reset_camera=True)
+show(hexapod, render_mates=True, mate_scale=5, reset_camera=True)
 
 print("\nAssembled objects:")
-for p in sorted(a.assembly.objs.keys()):
+for p in sorted(hexapod.assembly.objs.keys()):
     print("  ", p)
 
 # %%
@@ -356,15 +356,15 @@ def horizontal(end, reverse):
     return time_range(end, 4), [0, angle, 0, -angle, 0]
 
 
-with BuildAnimation():
+with BuildAnimation(hexapod):
     leg_group = ("left_front", "right_middle", "left_back")
 
     for name in _base.base_hinges.keys():
         times, values = horizontal(4, "middle" in name)
-        Track(f"/hexapod/{name}_leg", "rz", times, values)
+        Track(f"/base/{name}_leg", "rz", times, values)
 
         times, values = vertical(8, 4, 0 if name in leg_group else 4)
-        Track(f"/hexapod/{name}_leg/{name}_lower", "rz", times, values)
+        Track(f"/base/{name}_leg/lower_leg", "rz", times, values)
 
     Animate(2)
 

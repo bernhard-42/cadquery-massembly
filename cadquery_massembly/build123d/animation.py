@@ -67,7 +67,8 @@ class BuildAnimation:
 
         self._current.reset(self._reset_tok)
 
-    def __init__(self):
+    def __init__(self, assembly):
+        self.assembly = assembly
         self.animation = Animation()
 
     def _add_to_context(self, path, action, times, values):
@@ -82,6 +83,9 @@ class BuildAnimation:
 class Track:
     def __init__(self, path, action, times, values):
         context = BuildAnimation._get_context()
+
+        if path not in context.assembly.paths:
+            raise ValueError(f"Path {path} does not exist in assembly")
         context._add_to_context(path, action, times, values)
 
 

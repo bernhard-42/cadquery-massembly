@@ -63,6 +63,10 @@ class BuildAssembly:
             self.assembly = None
         else:
             self.assembly = MAssembly(name=name, loc=Location())
+            p = self._parent
+            while p is not None:
+                p = p._parent
+            p.animation_ready = False
 
     def _add_to_context(self, obj: MAssembly):
         if self.assembly is None:
@@ -79,6 +83,10 @@ class BuildAssembly:
     def _get_context(cls) -> "BuildAssembly":
         """Return the instance of the current builder"""
         return cls._current.get(None)
+
+    @property
+    def paths(self):
+        return list(self.assembly.objs.keys())
 
 
 class Mates:
