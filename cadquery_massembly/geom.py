@@ -1,9 +1,19 @@
+from importlib import import_module
 from math import pi
 
 from cadquery import Plane, Vector, Workplane, Edge, Wire
-from OCP.gp import gp_Pnt, gp_Dir, gp_Ax2, gp_Ax1
-from OCP.Geom import Geom_Circle, Geom_Line
-from OCP.GeomAPI import GeomAPI_ExtremaCurveCurve
+
+# The OCCT classes come from the binding CadQuery runs on (OCP, or nanocct for
+# CadQuery's nanocct port), so the curves built here are always of the same kind as
+# CadQuery's own objects.
+_binding = type(Vector(0, 0, 0).wrapped).__module__.split(".")[0]
+_gp = import_module(f"{_binding}.gp")
+_Geom = import_module(f"{_binding}.Geom")
+gp_Pnt, gp_Dir, gp_Ax2, gp_Ax1 = _gp.gp_Pnt, _gp.gp_Dir, _gp.gp_Ax2, _gp.gp_Ax1
+Geom_Circle, Geom_Line = _Geom.Geom_Circle, _Geom.Geom_Line
+GeomAPI_ExtremaCurveCurve = import_module(
+    f"{_binding}.GeomAPI"
+).GeomAPI_ExtremaCurveCurve
 
 
 def _geom_circle(radius, origin, x_dir, z_dir):
