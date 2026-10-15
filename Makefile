@@ -41,9 +41,9 @@ release:
 	git tag -a v$(CURRENT_VERSION) -m "Latest release: $(CURRENT_VERSION)"
 
 create-release:
-	@github-release release -u bernhard-42 -r cadquery-massembly -t v$(CURRENT_VERSION) -n cadquery-massembly-$(CURRENT_VERSION)
-	@sleep 2
-	@github-release upload  -u bernhard-42 -r cadquery-massembly -t v$(CURRENT_VERSION) -n cadquery_massembly-$(CURRENT_VERSION).tar.gz -f dist/cadquery_massembly-$(CURRENT_VERSION).tar.gz
+	@gh release create v$(CURRENT_VERSION) --repo bernhard-42/cadquery-massembly --verify-tag \
+		--title cadquery-massembly-$(CURRENT_VERSION) --notes v$(CURRENT_VERSION) \
+		dist/cadquery_massembly-$(CURRENT_VERSION).tar.gz
 
 install: dist
 	@echo "=> Installing cadquery_massembly"
